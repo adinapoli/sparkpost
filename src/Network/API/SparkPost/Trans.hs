@@ -1,29 +1,29 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-module Network.API.Mandrill.Trans where
+module Network.API.SparkPost.Trans where
 
 import Control.Monad.Reader
 import Control.Applicative
-import Network.API.Mandrill.Types
+import Network.API.SparkPost.Types
 import Network.HTTP.Client
 import Network.HTTP.Client.TLS
 
 
 --------------------------------------------------------------------------------
-newtype MandrillT m a = MandrillT {
-  runMandrillT :: ReaderT (MandrillKey, Manager) m a
-  } deriving (MonadTrans, MonadReader (MandrillKey, Manager),
+newtype SparkPostT m a = SparkPostT {
+  runSparkPostT :: ReaderT (SparkPostKey, Manager) m a
+  } deriving (MonadTrans, MonadReader (SparkPostKey, Manager),
               Functor, Applicative, Monad, MonadIO)
 
 
 --------------------------------------------------------------------------------
-type Mandrill = MandrillT IO
+type SparkPost = SparkPostT IO
 
 
 --------------------------------------------------------------------------------
-runMandrill :: MonadIO m
-            => MandrillKey
-            -> MandrillT m a
+runSparkPost :: MonadIO m
+            => SparkPostKey
+            -> SparkPostT m a
             -> m a
-runMandrill key action = do
+runSparkPost key action = do
   mgr <- liftIO $ newManager tlsManagerSettings
-  runReaderT (runMandrillT action) (key, mgr)
+  runReaderT (runSparkPostT action) (key, mgr)

@@ -1,4 +1,4 @@
-{-| This package is an attempt to expose the Mandrill JSON API in pure Haskell.
+{-| This package is an attempt to expose the SparkPost JSON API in pure Haskell.
     To do that, the library API comes in two flavours:
 
     * An IO-based, low-level 1:1 mapping of the JSON API,
@@ -6,7 +6,7 @@
     * A handy monad transformer which can be plugged in your stack of choice.
 -}
 
-module Network.API.Mandrill (
+module Network.API.SparkPost (
     module M
   , sendEmail
   , sendTextEmail
@@ -24,10 +24,10 @@ import Control.Monad.Reader
 import Control.Lens
 import Data.Time
 import Text.Blaze.Html
-import Network.API.Mandrill.Types as M
-import Network.API.Mandrill.Messages as M
-import Network.API.Mandrill.Messages.Types as M
-import Network.API.Mandrill.Trans as M
+import Network.API.SparkPost.Types as M
+import Network.API.SparkPost.Messages as M
+import Network.API.SparkPost.Messages.Types as M
+import Network.API.SparkPost.Trans as M
 import Data.Monoid
 import Text.Email.Validate
 import qualified Data.Text as T
@@ -40,18 +40,18 @@ The API was designed to allow to get you started as quickly as possible:
 
 > {-# LANGUAGE OverloadedStrings #-}
 > import Text.Email.Validate
-> import Network.API.Mandrill
+> import Network.API.SparkPost
 >
 > main :: IO ()
 > main = do
 >   case validate "foo@example.com" of
 >     Left err   -> print $ "Invalid email!" ++ show err
->     Right addr -> runMandrill "MYTOKENHERE" $ do
+>     Right addr -> runSparkPost "MYTOKENHERE" $ do
 >       let msg = "<p>My Html</p>"
 >       res <- sendEmail (newTextMessage addr [addr] "Hello" msg)
 >       case res of
->         MandrillSuccess k -> liftIO (print k)
->         MandrillFailure f -> liftIO (print f)
+>         SparkPostSuccess k -> liftIO (print k)
+>         SparkPostFailure f -> liftIO (print f)
 
 -}
 
@@ -59,12 +59,12 @@ The API was designed to allow to get you started as quickly as possible:
 -- | Builds an empty message, given only the email of the sender and
 -- the emails of the receiver. Please note that the "Subject" will be empty,
 -- so you need to use either @newTextMessage@ or @newHtmlMessage@ to populate it.
-emptyMessage :: EmailAddress -> [EmailAddress] -> MandrillMessage
-emptyMessage f t = MandrillMessage {
+emptyMessage :: EmailAddress -> [EmailAddress] -> SparkPostMessage
+emptyMessage f t = SparkPostMessage {
    _mmsg_html = mempty
  , _mmsg_text = Nothing
  , _mmsg_subject = T.empty
- , _mmsg_from_email = (MandrillEmail f)
+ , _mmsg_from_email = (SparkPostEmail f)
  , _mmsg_from_name = Nothing
  , _mmsg_to = map newRecipient t
  , _mmsg_headers = H.empty
@@ -105,8 +105,8 @@ newHtmlMessage :: EmailAddress
                -- ^ Subject
                -> Html
                -- ^ The HTML body
-               -> MandrillMessage
-newHtmlMessage f t subj html = let body = mkMandrillHtml html in
+               -> SparkPostMessage
+newHtmlMessage f t subj html = let body = mkSparkPostHtml html in
   ((mmsg_html .~ body) . (mmsg_subject .~ subj)) $ (emptyMessage f t)
 
 --------------------------------------------------------------------------------
@@ -117,11 +117,11 @@ newTemplateMessage :: EmailAddress
                    -- ^ Receivers email
                    -> T.Text
                    -- ^ Subject
-                   -> MandrillMessage
+                   -> SparkPostMessage
 newTemplateMessage f t subj = (mmsg_subject .~ subj) $ (emptyMessage f t)
 
 --------------------------------------------------------------------------------
--- | Create a new textual message. By default Mandrill doesn't require you
+-- | Create a new textual message. By default SparkPost doesn't require you
 -- to specify the @mmsg_text@ when sending out the JSON Payload, and this
 -- function ensure it will be present.
 newTextMessage :: EmailAddress
@@ -132,8 +132,8 @@ newTextMessage :: EmailAddress
                -- ^ Subject
                -> T.Text
                -- ^ The body, as normal text.
-               -> MandrillMessage
-newTextMessage f t subj txt = let body = unsafeMkMandrillHtml txt in
+               -> SparkPostMessage
+newTextMessage f t subj txt = let body = unsafeMkSparkPostHtml txt in
   ((mmsg_html .~ body) .
    (mmsg_text .~ Just txt) .
    (mmsg_subject .~ subj)) (emptyMessage f t)
@@ -141,13 +141,13 @@ newTextMessage f t subj txt = let body = unsafeMkMandrillHtml txt in
 
 --------------------------------------------------------------------------------
 -- | The simplest way to use the API. All you need to provide is a valid
--- 'MandrillMessage' and this function will send an email inside a
--- 'MandrillT' transformer. You are not forced to use the 'MandrillT' context
--- though. Have a look at "Network.API.Mandrill.Messages" for an IO-based,
+-- 'SparkPostMessage' and this function will send an email inside a
+-- 'SparkPostT' transformer. You are not forced to use the 'SparkPostT' context
+-- though. Have a look at "Network.API.SparkPost.Messages" for an IO-based,
 -- low lever function for sending email.
 sendEmail :: MonadIO m
-          => MandrillMessage
-          -> MandrillT m (MandrillResponse [MessagesResponse])
+          => SparkPostMessage
+          -> SparkPostT m (SparkPostResponse [MessagesResponse])
 sendEmail msg = do
   (key, mgr) <- ask
   liftIO $ send key msg (Just True) Nothing Nothing (Just mgr)
@@ -155,8 +155,8 @@ sendEmail msg = do
 
 --------------------------------------------------------------------------------
 sendTextEmail :: MonadIO m
-              => MandrillMessage
-              -> MandrillT m (MandrillResponse [MessagesResponse])
+              => SparkPostMessage
+              -> SparkPostT m (SparkPostResponse [MessagesResponse])
 sendTextEmail msg = do
   (key, mgr) <- ask
   now <- liftIO getCurrentTime

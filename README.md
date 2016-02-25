@@ -26,18 +26,18 @@ Example:
 ``` haskell
 {-# LANGUAGE OverloadedStrings #-}
 import Text.Email.Validate
-import Network.API.Mandrill
+import Network.API.SparkPost
 
 main :: IO ()
 main = do
   case validate "foo@example.com" of
     Left err   -> print $ "Invalid email!" ++ show err
-    Right addr -> runMandrill "MYTOKENHERE" $ do
+    Right addr -> runSparkPost "MYTOKENHERE" $ do
       let msg = "<p>My Html</p>"
       res <- sendEmail (newTextMessage addr [addr] "Hello" msg)
       case res of
-        MandrillSuccess k -> liftIO (print k)
-        MandrillFailure f -> liftIO (print f)
+        SparkPostSuccess k -> liftIO (print k)
+        SparkPostFailure f -> liftIO (print f)
 ```
 
 # Supported API versions
@@ -59,10 +59,10 @@ To test the online API, first build the package with tests enabled:
 cabal install --enable-tests
 ```
 
-Then export an environment variable with your Mandrill **Test** token:
+Then export an environment variable with your SparkPost **Test** token:
 
 ```
-export MANDRILL_API_KEY="YOURKEYGOESHERE"
+export SPARKPOST_API_KEY="YOURKEYGOESHERE"
 ```
 
 And finally execute the testsuite:

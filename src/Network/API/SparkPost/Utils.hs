@@ -1,5 +1,5 @@
 
-module Network.API.Mandrill.Utils where
+module Network.API.SparkPost.Utils where
 
 import Data.Char
 

@@ -1,12 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Network.API.Mandrill.Settings where
+module Network.API.SparkPost.Settings where
 
 import qualified Data.Text as T
 
 mandrillUrl :: T.Text
 mandrillUrl = "https://mandrillapp.com/api/1.0/"
 
-data MandrillCalls =
+data SparkPostCalls =
   -- Users API
     UsersInfo
   | UsersPing
@@ -17,10 +17,10 @@ data MandrillCalls =
   | MessagesSendTemplate
   | MessagesSearch deriving Show
 
-class MandrillEndpoint ep where
+class SparkPostEndpoint ep where
   toUrl :: ep -> T.Text
 
-instance MandrillEndpoint MandrillCalls where
+instance SparkPostEndpoint SparkPostCalls where
   toUrl UsersInfo = "users/info.json"
   toUrl UsersPing = "users/ping.json"
   toUrl UsersPing2 = "users/ping2.json"

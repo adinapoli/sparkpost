@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Network.API.Mandrill.HTTP where
+module Network.API.SparkPost.HTTP where
 
-import Network.API.Mandrill.Settings
-import Network.API.Mandrill.Types
+import Network.API.SparkPost.Settings
+import Network.API.SparkPost.Types
 import qualified Data.Text as T
 import Data.Monoid
 import Data.Aeson
@@ -11,12 +11,12 @@ import Network.HTTP.Types
 import Network.HTTP.Client
 import Network.HTTP.Client.TLS
 
-toMandrillResponse :: (MandrillEndpoint ep, FromJSON a, ToJSON rq)
+toSparkPostResponse :: (SparkPostEndpoint ep, FromJSON a, ToJSON rq)
                    => ep
                    -> rq
                    -> Maybe Manager
-                   -> IO (MandrillResponse a)
-toMandrillResponse ep rq mbMgr = do
+                   -> IO (SparkPostResponse a)
+toSparkPostResponse ep rq mbMgr = do
   let fullUrl = mandrillUrl <> toUrl ep
   rq' <- parseUrl (T.unpack fullUrl)
   let headers = [(hContentType, "application/json")]

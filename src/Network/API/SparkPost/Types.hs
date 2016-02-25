@@ -3,9 +3,9 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Network.API.Mandrill.Types where
+module Network.API.SparkPost.Types where
 
-import           Network.API.Mandrill.Utils
+import           Network.API.SparkPost.Utils
 import           Test.QuickCheck
 import           Text.Email.Validate
 import           Data.Char
@@ -40,29 +40,29 @@ timeParse = parseTime
 #endif
 
 --------------------------------------------------------------------------------
-data MandrillError = MandrillError {
+data SparkPostError = SparkPostError {
     _merr_status :: !T.Text
   , _merr_code :: !Int
   , _merr_name :: !T.Text
   , _merr_message :: !T.Text
   } deriving Show
 
-makeLenses ''MandrillError
-deriveJSON defaultOptions { fieldLabelModifier = drop 6 } ''MandrillError
+makeLenses ''SparkPostError
+deriveJSON defaultOptions { fieldLabelModifier = drop 6 } ''SparkPostError
 
 
 --------------------------------------------------------------------------------
-data MandrillEmailStatus = ES_Sent
+data SparkPostEmailStatus = ES_Sent
                          | ES_Queued
                          | ES_Scheduled
                          | ES_Rejected
                          | ES_Invalid deriving Show
 
-deriveJSON defaultOptions { constructorTagModifier = map toLower . drop 3 } ''MandrillEmailStatus
+deriveJSON defaultOptions { constructorTagModifier = map toLower . drop 3 } ''SparkPostEmailStatus
 
 
 --------------------------------------------------------------------------------
-data MandrillRejectReason = RR_HardBounce
+data SparkPostRejectReason = RR_HardBounce
                           | RR_SoftBounce
                           | RR_Spam
                           | RR_Unsub
@@ -74,104 +74,104 @@ data MandrillRejectReason = RR_HardBounce
 
 deriveJSON defaultOptions {
   constructorTagModifier = modRejectReason . drop 3
-  } ''MandrillRejectReason
+  } ''SparkPostRejectReason
 
 
 --------------------------------------------------------------------------------
--- | The main datatypes which models the response from the Mandrill API,
+-- | The main datatypes which models the response from the SparkPost API,
 -- which can be either a success or a failure.
-data MandrillResponse k =
-    MandrillSuccess k
-  | MandrillFailure MandrillError deriving Show
+data SparkPostResponse k =
+    SparkPostSuccess k
+  | SparkPostFailure SparkPostError deriving Show
 
-instance FromJSON k => FromJSON (MandrillResponse k) where
+instance FromJSON k => FromJSON (SparkPostResponse k) where
   parseJSON v = case (parseMaybe parseJSON v) :: Maybe k of
-    Just r -> return $ MandrillSuccess r
+    Just r -> return $ SparkPostSuccess r
     Nothing -> do
     -- try to parse it as an error
-      case (parseMaybe parseJSON v) :: Maybe MandrillError of
-        Just e -> return $ MandrillFailure e
-        Nothing -> fail $ show v <> " is neither a MandrillSuccess or a MandrillError."
+      case (parseMaybe parseJSON v) :: Maybe SparkPostError of
+        Just e -> return $ SparkPostFailure e
+        Nothing -> fail $ show v <> " is neither a SparkPostSuccess or a SparkPostError."
 
 
 --------------------------------------------------------------------------------
-data MandrillRecipientTag = To | Cc | Bcc deriving Show
+data SparkPostRecipientTag = To | Cc | Bcc deriving Show
 
-deriveJSON defaultOptions { constructorTagModifier = map toLower } ''MandrillRecipientTag
+deriveJSON defaultOptions { constructorTagModifier = map toLower } ''SparkPostRecipientTag
 
 
 --------------------------------------------------------------------------------
-newtype MandrillEmail = MandrillEmail EmailAddress deriving Show
+newtype SparkPostEmail = SparkPostEmail EmailAddress deriving Show
 
-instance ToJSON MandrillEmail where
-  toJSON (MandrillEmail e) = String . TL.decodeUtf8 . toByteString $ e
+instance ToJSON SparkPostEmail where
+  toJSON (SparkPostEmail e) = String . TL.decodeUtf8 . toByteString $ e
 
-instance FromJSON MandrillEmail where
+instance FromJSON SparkPostEmail where
   parseJSON (String s) = case validate (TL.encodeUtf8 s) of
     Left err -> fail err
-    Right v  -> return . MandrillEmail $ v
-  parseJSON o = typeMismatch "Expecting a String for MandrillEmail." o
+    Right v  -> return . SparkPostEmail $ v
+  parseJSON o = typeMismatch "Expecting a String for SparkPostEmail." o
 
 
 --------------------------------------------------------------------------------
 -- | An array of recipient information.
-data MandrillRecipient = MandrillRecipient {
-    _mrec_email :: MandrillEmail
+data SparkPostRecipient = SparkPostRecipient {
+    _mrec_email :: SparkPostEmail
     -- ^ The email address of the recipient
   , _mrec_name :: Maybe T.Text
     -- ^ The optional display name to use for the recipient
-  , _mrec_type :: Maybe MandrillRecipientTag
+  , _mrec_type :: Maybe SparkPostRecipientTag
     -- ^ The header type to use for the recipient.
     --   defaults to "to" if not provided
   } deriving Show
 
-makeLenses ''MandrillRecipient
-deriveJSON defaultOptions { fieldLabelModifier = drop 6 } ''MandrillRecipient
+makeLenses ''SparkPostRecipient
+deriveJSON defaultOptions { fieldLabelModifier = drop 6 } ''SparkPostRecipient
 
-newRecipient :: EmailAddress -> MandrillRecipient
-newRecipient email = MandrillRecipient (MandrillEmail email) Nothing Nothing
+newRecipient :: EmailAddress -> SparkPostRecipient
+newRecipient email = SparkPostRecipient (SparkPostEmail email) Nothing Nothing
 
-instance Arbitrary MandrillRecipient where
-  arbitrary = pure MandrillRecipient {
-      _mrec_email = MandrillEmail $ fromJust (emailAddress "test@example.com")
+instance Arbitrary SparkPostRecipient where
+  arbitrary = pure SparkPostRecipient {
+      _mrec_email = SparkPostEmail $ fromJust (emailAddress "test@example.com")
     , _mrec_name  =  Nothing
     , _mrec_type  =  Nothing
     }
 
 --------------------------------------------------------------------------------
-newtype MandrillHtml = MandrillHtml Blaze.Html
+newtype SparkPostHtml = SparkPostHtml Blaze.Html
 
-unsafeMkMandrillHtml :: T.Text -> MandrillHtml
-unsafeMkMandrillHtml = MandrillHtml . Blaze.preEscapedToHtml
+unsafeMkSparkPostHtml :: T.Text -> SparkPostHtml
+unsafeMkSparkPostHtml = SparkPostHtml . Blaze.preEscapedToHtml
 
 -- This might be slightly hairy because it violates
 -- the nice encapsulation that newtypes offer.
-mkMandrillHtml :: Blaze.Html -> MandrillHtml
-mkMandrillHtml = MandrillHtml
+mkSparkPostHtml :: Blaze.Html -> SparkPostHtml
+mkSparkPostHtml = SparkPostHtml
 
-instance Monoid MandrillHtml where
-  mempty = MandrillHtml mempty
-  mappend (MandrillHtml m1) (MandrillHtml m2) = MandrillHtml (m1 <> m2)
+instance Monoid SparkPostHtml where
+  mempty = SparkPostHtml mempty
+  mappend (SparkPostHtml m1) (SparkPostHtml m2) = SparkPostHtml (m1 <> m2)
 
-instance Show MandrillHtml where
-  show (MandrillHtml h) = show $ Blaze.renderHtml h
+instance Show SparkPostHtml where
+  show (SparkPostHtml h) = show $ Blaze.renderHtml h
 
-instance ToJSON MandrillHtml where
-  toJSON (MandrillHtml h) = String . TL.toStrict . Blaze.renderHtml $ h
+instance ToJSON SparkPostHtml where
+  toJSON (SparkPostHtml h) = String . TL.toStrict . Blaze.renderHtml $ h
 
-instance FromJSON MandrillHtml where
-  parseJSON (String h) = return $ MandrillHtml (Blaze.preEscapedToHtml h)
-  parseJSON v = typeMismatch "Expecting a String for MandrillHtml" v
+instance FromJSON SparkPostHtml where
+  parseJSON (String h) = return $ SparkPostHtml (Blaze.preEscapedToHtml h)
+  parseJSON v = typeMismatch "Expecting a String for SparkPostHtml" v
 
-instance Arbitrary MandrillHtml where
-  arbitrary = pure $ mkMandrillHtml "<p><b>FooBar</b></p>"
-
---------------------------------------------------------------------------------
-type MandrillTags = T.Text
-
+instance Arbitrary SparkPostHtml where
+  arbitrary = pure $ mkSparkPostHtml "<p><b>FooBar</b></p>"
 
 --------------------------------------------------------------------------------
-type MandrillHeaders = Object
+type SparkPostTags = T.Text
+
+
+--------------------------------------------------------------------------------
+type SparkPostHeaders = Object
 
 
 --------------------------------------------------------------------------------
@@ -185,22 +185,22 @@ makeLenses ''MergeVar
 deriveJSON defaultOptions { fieldLabelModifier = drop 4 } ''MergeVar
 
 --------------------------------------------------------------------------------
-data MandrillMergeVars = MandrillMergeVars {
+data SparkPostMergeVars = SparkPostMergeVars {
     _mmvr_rcpt :: !T.Text
   , _mmvr_vars :: [MergeVar]
   } deriving Show
 
-makeLenses ''MandrillMergeVars
-deriveJSON defaultOptions { fieldLabelModifier = drop 6 } ''MandrillMergeVars
+makeLenses ''SparkPostMergeVars
+deriveJSON defaultOptions { fieldLabelModifier = drop 6 } ''SparkPostMergeVars
 
 --------------------------------------------------------------------------------
-data MandrillMetadata = MandrillMetadata {
+data SparkPostMetadata = SparkPostMetadata {
     _mmdt_rcpt :: !T.Text
   , _mmdt_values :: Object
   } deriving Show
 
-makeLenses ''MandrillMetadata
-deriveJSON defaultOptions { fieldLabelModifier = drop 6 } ''MandrillMetadata
+makeLenses ''SparkPostMetadata
+deriveJSON defaultOptions { fieldLabelModifier = drop 6 } ''SparkPostMetadata
 
 
 data Base64ByteString =
@@ -219,7 +219,7 @@ instance FromJSON Base64ByteString where
   parseJSON rest = typeMismatch "Base64ByteString must be a String." rest
 
 --------------------------------------------------------------------------------
-data MandrillWebContent = MandrillWebContent {
+data SparkPostWebContent = SparkPostWebContent {
     _mwct_type :: !T.Text
   , _mwct_name :: !T.Text
     -- ^ [for images] the Content ID of the image
@@ -228,25 +228,25 @@ data MandrillWebContent = MandrillWebContent {
   , _mwct_content :: !Base64ByteString
   } deriving Show
 
-makeLenses ''MandrillWebContent
-deriveJSON defaultOptions { fieldLabelModifier = drop 6 } ''MandrillWebContent
+makeLenses ''SparkPostWebContent
+deriveJSON defaultOptions { fieldLabelModifier = drop 6 } ''SparkPostWebContent
 
 --------------------------------------------------------------------------------
 -- | The information on the message to send
-data MandrillMessage = MandrillMessage {
-   _mmsg_html :: MandrillHtml
+data SparkPostMessage = SparkPostMessage {
+   _mmsg_html :: SparkPostHtml
    -- ^ The full HTML content to be sent
  , _mmsg_text :: Maybe T.Text
    -- ^ Optional full text content to be sent
  , _mmsg_subject :: !T.Text
    -- ^ The message subject
- , _mmsg_from_email :: MandrillEmail
+ , _mmsg_from_email :: SparkPostEmail
    -- ^ The sender email address
  , _mmsg_from_name :: Maybe T.Text
    -- ^ Optional from name to be used
- , _mmsg_to :: [MandrillRecipient]
+ , _mmsg_to :: [SparkPostRecipient]
    -- ^ A list of recipient information
- , _mmsg_headers :: MandrillHeaders
+ , _mmsg_headers :: SparkPostHeaders
    -- ^ optional extra headers to add to the message (most headers are allowed)
  , _mmsg_important :: Maybe Bool
    -- ^ whether or not this message is important, and should be delivered ahead
@@ -283,9 +283,9 @@ data MandrillMessage = MandrillMessage {
    -- or global_merge_vars are provided.
  , _mmsg_global_merge_vars :: [MergeVar]
    -- ^ global merge variables to use for all recipients. You can override these per recipient.
- , _mmsg_merge_vars :: [MandrillMergeVars]
+ , _mmsg_merge_vars :: [SparkPostMergeVars]
    -- ^ per-recipient merge variables, which override global merge variables with the same name.
- , _mmsg_tags :: [MandrillTags]
+ , _mmsg_tags :: [SparkPostTags]
    -- ^ an array of string to tag the message with. Stats are accumulated using tags,
    -- though we only store the first 100 we see, so this should not be unique
    -- or change frequently. Tags should be 50 characters or less.
@@ -303,27 +303,27 @@ data MandrillMessage = MandrillMessage {
    -- tracking parameter. If this isn't provided the email's from address
    -- will be used instead.
  , _mmsg_metadata :: Object
-   -- ^ metadata an associative array of user metadata. Mandrill will store
+   -- ^ metadata an associative array of user metadata. SparkPost will store
    -- this metadata and make it available for retrieval.
    -- In addition, you can select up to 10 metadata fields to index
-   -- and make searchable using the Mandrill search api.
- , _mmsg_recipient_metadata :: [MandrillMetadata]
+   -- and make searchable using the SparkPost search api.
+ , _mmsg_recipient_metadata :: [SparkPostMetadata]
    -- ^ Per-recipient metadata that will override the global values
    -- specified in the metadata parameter.
- , _mmsg_attachments :: [MandrillWebContent]
+ , _mmsg_attachments :: [SparkPostWebContent]
    -- ^ an array of supported attachments to add to the message
- , _mmsg_images :: [MandrillWebContent]
+ , _mmsg_images :: [SparkPostWebContent]
    -- ^ an array of embedded images to add to the message
  } deriving Show
 
-makeLenses ''MandrillMessage
-deriveJSON defaultOptions { fieldLabelModifier = drop 6 } ''MandrillMessage
+makeLenses ''SparkPostMessage
+deriveJSON defaultOptions { fieldLabelModifier = drop 6 } ''SparkPostMessage
 
-instance Arbitrary MandrillMessage where
-  arbitrary = MandrillMessage <$> arbitrary
+instance Arbitrary SparkPostMessage where
+  arbitrary = SparkPostMessage <$> arbitrary
                               <*> pure Nothing
                               <*> pure "Test Subject"
-                              <*> pure (MandrillEmail . fromJust $ emailAddress "sender@example.com")
+                              <*> pure (SparkPostEmail . fromJust $ emailAddress "sender@example.com")
                               <*> pure Nothing
                               <*> resize 2 arbitrary
                               <*> pure H.empty
@@ -354,27 +354,27 @@ instance Arbitrary MandrillMessage where
 
 --------------------------------------------------------------------------------
 -- | Key value pair for replacing content in templates via 'Editable Regions'
-data MandrillTemplateContent = MandrillTemplateContent {
+data SparkPostTemplateContent = SparkPostTemplateContent {
     _mtc_name    :: T.Text
   , _mtc_content :: T.Text
   } deriving Show
 
-makeLenses ''MandrillTemplateContent
-deriveJSON defaultOptions { fieldLabelModifier = drop 5 } ''MandrillTemplateContent
+makeLenses ''SparkPostTemplateContent
+deriveJSON defaultOptions { fieldLabelModifier = drop 5 } ''SparkPostTemplateContent
 
 --------------------------------------------------------------------------------
-type MandrillKey = T.Text
-type MandrillTemplate = T.Text
+type SparkPostKey = T.Text
+type SparkPostTemplate = T.Text
 
-newtype MandrillDate = MandrillDate {
-  fromMandrillDate :: UTCTime
+newtype SparkPostDate = SparkPostDate {
+  fromSparkPostDate :: UTCTime
   } deriving Show
 
-instance ToJSON MandrillDate where
-  toJSON = toJSON . fromMandrillDate
+instance ToJSON SparkPostDate where
+  toJSON = toJSON . fromSparkPostDate
 
-instance FromJSON MandrillDate where
-  parseJSON = withText "MandrillDate" $ \t ->
+instance FromJSON SparkPostDate where
+  parseJSON = withText "SparkPostDate" $ \t ->
       case timeParse defaultTimeLocale "%Y-%m-%d %I:%M:%S%Q" (T.unpack t) of
-        Just d -> pure $ MandrillDate d
-        _      -> fail "could not parse Mandrill date"
+        Just d -> pure $ SparkPostDate d
+        _      -> fail "could not parse SparkPost date"

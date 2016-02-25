@@ -1,6 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Network.API.Mandrill.Users.Types where
+module Network.API.SparkPost.Users.Types where
 
 import           Data.Char
 import           Data.Time
@@ -12,19 +12,19 @@ import           Data.Aeson
 import           Data.Aeson.Types
 import           Data.Aeson.TH
 
-import           Network.API.Mandrill.Types
+import           Network.API.SparkPost.Types
 
 
 --------------------------------------------------------------------------------
 data UsersRq = UsersRq {
-    _ureq_key :: !MandrillKey
+    _ureq_key :: !SparkPostKey
   } deriving Show
 
 makeLenses ''UsersRq
 deriveJSON defaultOptions { fieldLabelModifier = drop 6 } ''UsersRq
 
 --------------------------------------------------------------------------------
-data MandrillStats = MandrillStats {
+data SparkPostStats = SparkPostStats {
     _msts_sent :: Int
   , _msts_hard_bounces :: Int
   , _msts_soft_bounces :: Int
@@ -37,17 +37,17 @@ data MandrillStats = MandrillStats {
   , _msts_unique_clicks :: Int
   } deriving Show
 
-makeLenses ''MandrillStats
-deriveJSON defaultOptions { fieldLabelModifier = drop 6 } ''MandrillStats
+makeLenses ''SparkPostStats
+deriveJSON defaultOptions { fieldLabelModifier = drop 6 } ''SparkPostStats
 
 --------------------------------------------------------------------------------
 data UserStats = UserStats {
-    _usts_today :: MandrillStats
-  , _usts_last_7_days :: MandrillStats
-  , _usts_last_30_days :: MandrillStats
-  , _usts_last_60_days :: MandrillStats
-  , _usts_last_90_days :: MandrillStats
-  , _usts_all_time :: MandrillStats
+    _usts_today :: SparkPostStats
+  , _usts_last_7_days :: SparkPostStats
+  , _usts_last_30_days :: SparkPostStats
+  , _usts_last_60_days :: SparkPostStats
+  , _usts_last_90_days :: SparkPostStats
+  , _usts_all_time :: SparkPostStats
   } deriving Show
 
 makeLenses ''UserStats
@@ -56,7 +56,7 @@ deriveJSON defaultOptions { fieldLabelModifier = drop 6 } ''UserStats
 --------------------------------------------------------------------------------
 data UsersInfoResponse = UsersInfoResponse {
     _usir_username :: !T.Text
-  , _usir_created_at :: MandrillDate
+  , _usir_created_at :: SparkPostDate
   , _usir_public_id :: !T.Text
   , _usir_reputation :: !Int
   , _usir_hourly_quota :: !Int
@@ -90,8 +90,8 @@ deriveJSON defaultOptions { fieldLabelModifier = drop 6 } ''UsersPing2Response
 data UsersSendersResponse = UsersResponse {
     _usrr_address :: !T.Text
     -- ^ The sender's email address
-  , _usrr_created_at :: MandrillDate
-    -- ^ The date and time that the sender was first seen by Mandrill 
+  , _usrr_created_at :: SparkPostDate
+    -- ^ The date and time that the sender was first seen by SparkPost 
     -- as a UTC date string in YYYY-MM-DD HH:MM:SS format
   , _usrr_sent :: !Int
     -- ^ The total number of messages sent by this sender
