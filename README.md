@@ -9,9 +9,14 @@ Expect alpha quality & incomplete software.**
 This module implement a low-level, 1:1 mapping API to
 the [sparkpost](http://sparkpost.com) transactional email service.
 
+# Which SparkPost?
+
+At the moment only the "normal" SparkPost is support. Differently put, **SparkPost Elite is
+currently unsupported.** (PR welcome!)
+
 # Changelog
 
-## Version 0.0.1.0
+## Version 0.1.0.0
 
 * Initial release (branching off from the `mandrill` library).
 

@@ -14,6 +14,26 @@ import           Data.Aeson.TH
 
 import           Network.API.SparkPost.V1.Types
 
+data TransmissionOptions = TransmissionOptions {
+    _tro_start_time :: Maybe SparkPostDate
+    -- ^ Delay generation of messages until this datetime.
+    -- Format YYYY-MM-DDTHH:MM:SS+-HH:MM or "now". Example: '2015-02-11T08:00:00-04:00'.
+  , _tro_open_tracking :: Maybe Bool
+    -- ^ Whether open tracking is enabled for this transmission.
+  , _tro_click_tracking :: Maybe Bool
+    -- ^ Whether click tracking is enabled for this transmission.
+  , _tro_transactional :: Maybe Bool
+    -- ^ Whether message is transactional or non-transactional for unsubscribe and suppression purposes.
+  , _tro_sandbox :: Maybe Bool
+    -- ^ Whether or not to use the sandbox sending domain.
+  } deriving Show
+
+deriveToJSON defaultOptions { fieldLabelModifier = drop 5, omitNothingFields = True } ''TransmissionOptions
+
+data Recipient -- TODO
+data Metadata -- TODO
+data SubstitutionData -- TODO
+data Content -- TODO
 
 data Transmission = Transmission {
     _tra_options :: Maybe TransmissionOptions
@@ -28,6 +48,8 @@ data Transmission = Transmission {
     -- ^ Metadata is available during events through the Webhooks and is provided to the substitution engine.
   , _tra_substitution_data :: Maybe SubstitutionData
     -- ^ Recipient substitution data takes precedence over transmission substitution data.
-  }
+  , _tra_content :: Content
+    -- ^ Specify a stored template or specify inline template content.
+  } deriving Show
 
-deriveToJSON defaultOptions { fieldLabelModifier = drop 5 } ''Transmission
+deriveToJSON defaultOptions { fieldLabelModifier = drop 5, omitNothingFields = True } ''Transmission
