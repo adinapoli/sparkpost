@@ -3,41 +3,30 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Network.API.SparkPost.Types where
+module Network.API.SparkPost.V1.Types where
 
-import           Network.API.SparkPost.Utils
-import           Test.QuickCheck
-import           Text.Email.Validate
-import           Data.Char
-import           Data.Maybe
-import           Data.Time
 import           Control.Applicative
-#if MIN_VERSION_time(1,5,0)
-import Data.Time.Format (TimeLocale, defaultTimeLocale)
-#else
-import System.Locale (TimeLocale, defaultTimeLocale)
-#endif
+import           Control.Lens
+import           Data.Aeson
+import           Data.Aeson.TH
+import           Data.Aeson.Types
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Base64 as Base64
+import           Data.Char
 import qualified Data.HashMap.Strict as H
+import           Data.Maybe
+import           Data.Monoid
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TL
 import qualified Data.Text.Lazy as TL
-import           Control.Lens
-import           Data.Monoid
-import           Data.Aeson
-import           Data.Aeson.Types
-import           Data.Aeson.TH
+import           Data.Time
+import           Data.Time.Format (TimeLocale, defaultTimeLocale)
+import           Network.API.SparkPost.V1.Utils
+import           Test.QuickCheck
 import qualified Text.Blaze.Html as Blaze
 import qualified Text.Blaze.Html.Renderer.Text as Blaze
+import           Text.Email.Validate
 
-
-timeParse :: ParseTime t => TimeLocale -> String -> String -> Maybe t
-#if MIN_VERSION_time(1,5,0)
-timeParse = parseTimeM True
-#else
-timeParse = parseTime
-#endif
 
 --------------------------------------------------------------------------------
 data SparkPostError = SparkPostError {
@@ -80,9 +69,9 @@ deriveJSON defaultOptions {
 --------------------------------------------------------------------------------
 -- | The main datatypes which models the response from the SparkPost API,
 -- which can be either a success or a failure.
-data SparkPostResponse k =
-    SparkPostSuccess k
-  | SparkPostFailure SparkPostError deriving Show
+data SparkPostResponse k = SparkPostSuccess k
+                         | SparkPostFailure SparkPostError
+                         deriving Show
 
 instance FromJSON k => FromJSON (SparkPostResponse k) where
   parseJSON v = case (parseMaybe parseJSON v) :: Maybe k of
@@ -232,127 +221,6 @@ makeLenses ''SparkPostWebContent
 deriveJSON defaultOptions { fieldLabelModifier = drop 6 } ''SparkPostWebContent
 
 --------------------------------------------------------------------------------
--- | The information on the message to send
-data SparkPostMessage = SparkPostMessage {
-   _mmsg_html :: SparkPostHtml
-   -- ^ The full HTML content to be sent
- , _mmsg_text :: Maybe T.Text
-   -- ^ Optional full text content to be sent
- , _mmsg_subject :: !T.Text
-   -- ^ The message subject
- , _mmsg_from_email :: SparkPostEmail
-   -- ^ The sender email address
- , _mmsg_from_name :: Maybe T.Text
-   -- ^ Optional from name to be used
- , _mmsg_to :: [SparkPostRecipient]
-   -- ^ A list of recipient information
- , _mmsg_headers :: SparkPostHeaders
-   -- ^ optional extra headers to add to the message (most headers are allowed)
- , _mmsg_important :: Maybe Bool
-   -- ^ whether or not this message is important, and should be delivered ahead
-   -- of non-important messages
- , _mmsg_track_opens :: Maybe Bool
-   -- ^ whether or not to turn on open tracking for the message
- , _mmsg_track_clicks :: Maybe Bool
-   -- ^ whether or not to turn on click tracking for the message
- , _mmsg_auto_text :: Maybe Bool
-   -- ^ whether or not to automatically generate a text part for messages that are not given text
- , _mmsg_auto_html :: Maybe Bool
-   -- ^ whether or not to automatically generate an HTML part for messages that are not given HTML
- , _mmsg_inline_css :: Maybe Bool
-   -- ^ whether or not to automatically inline all CSS styles provided in the message HTML
-   -- - only for HTML documents less than 256KB in size
- , _mmsg_url_strip_qs :: Maybe Bool
-   -- ^ whether or not to strip the query string from URLs when aggregating tracked URL data
- , _mmsg_preserve_recipients :: Maybe Bool
-   -- ^ whether or not to expose all recipients in to "To" header for each email
- , _mmsg_view_content_link :: Maybe Bool
-   -- ^ set to false to remove content logging for sensitive emails
- , _mmsg_bcc_address :: Maybe T.Text
-   -- ^ an optional address to receive an exact copy of each recipient's email
- , _mmsg_tracking_domain :: Maybe T.Text
-   -- ^ a custom domain to use for tracking opens and clicks instead of mandrillapp.com
- , _mmsg_signing_domain :: Maybe Bool
-   -- ^ a custom domain to use for SPF/DKIM signing instead of mandrill
-   -- (for "via" or "on behalf of" in email clients)
- , _mmsg_return_path_domain :: Maybe Bool
-   -- ^ a custom domain to use for the messages's return-path
- , _mmsg_merge :: Maybe Bool
-   -- ^ whether to evaluate merge tags in the message.
-   -- Will automatically be set to true if either merge_vars
-   -- or global_merge_vars are provided.
- , _mmsg_global_merge_vars :: [MergeVar]
-   -- ^ global merge variables to use for all recipients. You can override these per recipient.
- , _mmsg_merge_vars :: [SparkPostMergeVars]
-   -- ^ per-recipient merge variables, which override global merge variables with the same name.
- , _mmsg_tags :: [SparkPostTags]
-   -- ^ an array of string to tag the message with. Stats are accumulated using tags,
-   -- though we only store the first 100 we see, so this should not be unique
-   -- or change frequently. Tags should be 50 characters or less.
-   -- Any tags starting with an underscore are reserved for internal use
-   -- and will cause errors.
- , _mmsg_subaccount :: Maybe T.Text
-   -- ^ the unique id of a subaccount for this message
-   -- - must already exist or will fail with an error
- , _mmsg_google_analytics_domains :: [T.Text]
-   -- ^ an array of strings indicating for which any matching URLs
-   -- will automatically have Google Analytics parameters appended
-   -- to their query string automatically.
- , _mmsg_google_analytics_campaign :: Maybe T.Text
-   -- ^ optional string indicating the value to set for the utm_campaign
-   -- tracking parameter. If this isn't provided the email's from address
-   -- will be used instead.
- , _mmsg_metadata :: Object
-   -- ^ metadata an associative array of user metadata. SparkPost will store
-   -- this metadata and make it available for retrieval.
-   -- In addition, you can select up to 10 metadata fields to index
-   -- and make searchable using the SparkPost search api.
- , _mmsg_recipient_metadata :: [SparkPostMetadata]
-   -- ^ Per-recipient metadata that will override the global values
-   -- specified in the metadata parameter.
- , _mmsg_attachments :: [SparkPostWebContent]
-   -- ^ an array of supported attachments to add to the message
- , _mmsg_images :: [SparkPostWebContent]
-   -- ^ an array of embedded images to add to the message
- } deriving Show
-
-makeLenses ''SparkPostMessage
-deriveJSON defaultOptions { fieldLabelModifier = drop 6 } ''SparkPostMessage
-
-instance Arbitrary SparkPostMessage where
-  arbitrary = SparkPostMessage <$> arbitrary
-                              <*> pure Nothing
-                              <*> pure "Test Subject"
-                              <*> pure (SparkPostEmail . fromJust $ emailAddress "sender@example.com")
-                              <*> pure Nothing
-                              <*> resize 2 arbitrary
-                              <*> pure H.empty
-                              <*> pure Nothing
-                              <*> pure Nothing
-                              <*> pure Nothing
-                              <*> pure Nothing
-                              <*> pure Nothing
-                              <*> pure Nothing
-                              <*> pure Nothing
-                              <*> pure Nothing
-                              <*> pure Nothing
-                              <*> pure Nothing
-                              <*> pure Nothing
-                              <*> pure Nothing
-                              <*> pure Nothing
-                              <*> pure Nothing
-                              <*> pure []
-                              <*> pure []
-                              <*> pure []
-                              <*> pure Nothing
-                              <*> pure []
-                              <*> pure Nothing
-                              <*> pure H.empty
-                              <*> pure []
-                              <*> pure []
-                              <*> pure []
-
---------------------------------------------------------------------------------
 -- | Key value pair for replacing content in templates via 'Editable Regions'
 data SparkPostTemplateContent = SparkPostTemplateContent {
     _mtc_name    :: T.Text
@@ -363,8 +231,7 @@ makeLenses ''SparkPostTemplateContent
 deriveJSON defaultOptions { fieldLabelModifier = drop 5 } ''SparkPostTemplateContent
 
 --------------------------------------------------------------------------------
-type SparkPostKey = T.Text
-type SparkPostTemplate = T.Text
+type SparkPostAPIKey = T.Text
 
 newtype SparkPostDate = SparkPostDate {
   fromSparkPostDate :: UTCTime
@@ -375,6 +242,6 @@ instance ToJSON SparkPostDate where
 
 instance FromJSON SparkPostDate where
   parseJSON = withText "SparkPostDate" $ \t ->
-      case timeParse defaultTimeLocale "%Y-%m-%d %I:%M:%S%Q" (T.unpack t) of
+      case parseTimeM True defaultTimeLocale "%Y-%m-%d %I:%M:%S%Q" (T.unpack t) of
         Just d -> pure $ SparkPostDate d
         _      -> fail "could not parse SparkPost date"

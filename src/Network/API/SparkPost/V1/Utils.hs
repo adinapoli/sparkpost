@@ -1,5 +1,5 @@
 
-module Network.API.SparkPost.Utils where
+module Network.API.SparkPost.V1.Utils where
 
 import Data.Char
 

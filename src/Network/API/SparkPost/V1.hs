@@ -6,8 +6,8 @@
     * A handy monad transformer which can be plugged in your stack of choice.
 -}
 
-module Network.API.SparkPost (
-    module M
+module Network.API.SparkPost.V1 (
+    module V1
   , sendEmail
   , sendTextEmail
   , emptyMessage
@@ -20,19 +20,19 @@ module Network.API.SparkPost (
   -- $exampleusage
   ) where
 
-import Control.Monad.Reader
-import Control.Lens
-import Data.Time
-import Text.Blaze.Html
-import Network.API.SparkPost.Types as M
-import Network.API.SparkPost.Messages as M
-import Network.API.SparkPost.Messages.Types as M
-import Network.API.SparkPost.Trans as M
-import Data.Monoid
-import Text.Email.Validate
-import qualified Data.Text as T
+import           Control.Lens
+import           Control.Monad.Reader
 import qualified Data.Aeson as JSON
 import qualified Data.HashMap.Strict as H
+import           Data.Monoid
+import qualified Data.Text as T
+import           Data.Time
+import           Network.API.SparkPost.V1.Trans as V1
+import           Network.API.SparkPost.V1.Transmission as V1
+import           Network.API.SparkPost.V1.Transmission.Types as V1
+import           Network.API.SparkPost.V1.Types as V1
+import           Text.Blaze.Html
+import           Text.Email.Validate
 
 {- $exampleusage
 
@@ -40,7 +40,7 @@ The API was designed to allow to get you started as quickly as possible:
 
 > {-# LANGUAGE OverloadedStrings #-}
 > import Text.Email.Validate
-> import Network.API.SparkPost
+> import Network.API.SparkPost.V1
 >
 > main :: IO ()
 > main = do

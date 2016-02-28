@@ -1,5 +1,5 @@
 name:                sparkpost
-version:             0.5.1.0
+version:             0.1.0.0
 synopsis:            Library for interfacing with the SparkPost JSON API
 description:         Pure Haskell client for the SparkPost JSON API
 license:             MIT
@@ -8,7 +8,7 @@ author:              Alfredo Di Napoli
 maintainer:          alfredo.dinapoli@gmail.com
 category:            Network
 build-type:          Simple
-tested-with:         GHC == 7.4, GHC == 7.6, GHC == 7.8, GHC == 7.10.2
+tested-with:         GHC == 7.10.3
 cabal-version:       >=1.10
 
 source-repository head
@@ -17,17 +17,15 @@ source-repository head
 
 library
   exposed-modules:
-    Network.API.SparkPost
-    Network.API.SparkPost.Settings
-    Network.API.SparkPost.Types
-    Network.API.SparkPost.Trans
-    Network.API.SparkPost.Users
-    Network.API.SparkPost.Users.Types
-    Network.API.SparkPost.Messages
-    Network.API.SparkPost.Messages.Types
+    Network.API.SparkPost.V1
+    Network.API.SparkPost.V1.Settings
+    Network.API.SparkPost.V1.Types
+    Network.API.SparkPost.V1.Trans
+    Network.API.SparkPost.V1.Transmission
+    Network.API.SparkPost.V1.Transmission.Types
   other-modules:
-    Network.API.SparkPost.Utils
-    Network.API.SparkPost.HTTP
+    Network.API.SparkPost.V1.Utils
+    Network.API.SparkPost.V1.HTTP
   -- other-extensions:
   build-depends: base >=4.6 && < 5
                , containers >= 0.5.0.0
@@ -46,6 +44,7 @@ library
                , time
                , email-validate >= 1.0.0
                , old-locale
+               , string-conv
                , unordered-containers
   hs-source-dirs:
     src
